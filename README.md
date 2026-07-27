@@ -90,6 +90,34 @@ Checkout their getting started guide for more information: https://viteplus.dev/
 vp i
 ```
 
+### Nix development environment
+
+With [Nix flakes](https://nixos.wiki/wiki/Flakes) enabled, enter the reproducible development
+environment and install dependencies:
+
+```bash
+nix develop
+pnpm install
+vp run dev
+```
+
+With `direnv` and `nix-direnv` installed, run `direnv allow` once to load the same flake
+automatically through the included `.envrc`.
+
+The flake provides Node.js 24, Corepack (which selects the `pnpm` version pinned in
+`package.json`), the native build toolchain, and the repository-local `vp` command on `PATH`.
+It supports Linux and macOS on both x86-64 and ARM64.
+
+Consumers can follow their own `nixpkgs` input and extend the shell without forking:
+
+```nix
+devShells.${system}.default = t3code.lib.mkDevShell {
+  inherit system pkgs;
+  extraPackages = [ pkgs.nil ];
+  extraShellHook = "export T3CODE_DEV_INSTANCE=nix";
+};
+```
+
 Read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening an issue or PR.
 
 Need support? Join the [Discord](https://discord.gg/jn4EGJjrvv).

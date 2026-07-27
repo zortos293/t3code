@@ -1,0 +1,51 @@
+name: Nix
+
+on:
+  pull_request:
+    paths:
+      - ".envrc"
+      - ".github/workflows/nix.yml"
+      - "flake.lock"
+      - "flake.nix"
+  push:
+    branches:
+      - main
+    paths:
+      - ".envrc"
+      - ".github/workflows/nix.yml"
+      - "flake.lock"
+      - "flake.nix"
+
+permissions:
+  contents: read
+
+jobs:
+  flake:
+    name: Flake (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-14
+          - ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Check flake
+        run: nix flake check
+
+      - name: Verify pinned JavaScript toolchain
+        run: |
+          # The single-quoted script must expand inside the Nix shell, not in this runner shell.
+          # shellcheck disable=SC2016
+          nix develop --command bash -euo pipefail -c '
+            test "$(node --print "process.versions.node.split(\".\")[0]")" = "24"
+            expected_pnpm="$(node --print "require(\"./package.json\").packageManager.split(\"@\").pop()")"
+            test "$(pnpm --version)" = "$expected_pnpm"
+          '
